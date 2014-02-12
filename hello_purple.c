@@ -143,20 +143,33 @@ static void init_libpurple(void)
 	purple_pounces_load();
 }
 
+static void signed_on(PurpleConnection *gc)
+{
+	PurpleAccount *account = purple_connection_get_account(gc);
+	printf("Account connected: \"%s\" (%s)\n", purple_account_get_username(account), purple_account_get_protocol_id(account));
+
+	PurpleConversation *conv = purple_conversation_new(PURPLE_CONV_TYPE_IM, account, "kei91@jabber.ru");
+	purple_conv_im_send_with_flags(PURPLE_CONV_IM(conv), "Hello, world!", PURPLE_MESSAGE_SEND);
+}
+
+static void connect_to_signals(void)
+{
+	static int handle;
+
+	purple_signal_connect(purple_connections_get_handle(), "signed-on", &handle, PURPLE_CALLBACK(signed_on), NULL);
+}
 
 int main() {
 
 	signal(SIGCHLD, SIG_IGN);
 	init_libpurple();
 	printf("libpurple initialized. Running version %s.\n", purple_core_get_version()); //I like to see the version number
+	connect_to_signals();
 
 	PurpleAccount *account = purple_account_new("kei91@jabber.ru", "prpl-jabber");
 	purple_account_set_password(account, USER_PASSWORD);
 	purple_accounts_add(account);
 	purple_account_set_enabled(account, UI_ID, TRUE);
-
-	PurpleConversation *conv = purple_conversation_new(PURPLE_CONV_TYPE_IM, account, "kei91@jabber.ru");
-	purple_conv_im_send_with_flags(PURPLE_CONV_IM(conv), "Hello, world!", PURPLE_MESSAGE_SEND);
 
 	GMainLoop *loop = g_main_loop_new(NULL, FALSE);
 	g_main_loop_run(loop);
